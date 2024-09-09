@@ -2,7 +2,9 @@
 ```bash
 cut –d: -f1 /etc/passwd | sort
 ```
-< img src="C:\Users\ADMIN\OneDrive\Hình ảnh\Ảnh chụp màn hình\Screenshot 2024-09-02 164331.png">
+![Screenshot 2024-09-02 164331](https://github.com/user-attachments/assets/3542cffe-5c7b-4bfe-b1e6-55902c64ef3a)
+
+
 ## Задача 2
 ```bash
 cat /etc/protocols | awk ‘{print $2, $1}’ | sort –nr head –n 5
