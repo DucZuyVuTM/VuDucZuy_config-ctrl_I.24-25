@@ -75,6 +75,7 @@ done
 
 find "$1" -type f -exec md5sum {} + | sort | uniq -w32 -d
 ```
+![Screenshot 2024-09-09 185656](https://github.com/user-attachments/assets/4e629506-252d-49e6-b2c2-49a4dbc5d579)
 
 ## Задача 8
 
@@ -92,6 +93,9 @@ find . -name "*.$1" -print0 | xargs -0 tar -czvf archive.tar.gz
 
 sed 's/    /\t/g' "$1" > "$2"
 ```
+![Screenshot 2024-09-09 191829](https://github.com/user-attachments/assets/fba3ebd2-3f7b-470a-bd97-615ff5cd64ba)
+![Screenshot 2024-09-09 191812](https://github.com/user-attachments/assets/5e9e37ff-e227-4da7-b0d9-e0e9f9c93138)
+![Screenshot 2024-09-09 191847](https://github.com/user-attachments/assets/7b729000-9efe-4ade-91ad-e987bd822f2b)
 
 ## Задача 10
 
