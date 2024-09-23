@@ -62,4 +62,4 @@ solve minimize digits[1] + digits[2] + digits[3];
 output ["Các chữ số của vé số: \(digits)\n"];
 
 ```
-![Screenshot 2024-09-23 140555](https://github.com/user-attachments/assets/d2620166-085b-4df6-829a-fe37f4f8d322)
+![Screenshot 2024-09-23 170610](https://github.com/user-attachments/assets/8d637db8-d660-4bfa-845d-e7868be27161)
