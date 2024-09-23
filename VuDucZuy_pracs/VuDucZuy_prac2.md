@@ -108,3 +108,75 @@ output ["menu version: ", show(menu_version), "\ndropdown version: ", show(dropd
 
 ```
 ![Screenshot 2024-09-23 181146](https://github.com/user-attachments/assets/0b0d9783-e244-4352-9daf-697a76898191)
+
+## Задача 6
+
+Решить на MiniZinc задачу о зависимостях пакетов для следующих данных:
+
+```
+root 1.0.0 зависит от foo ^1.0.0 и target ^2.0.0.
+foo 1.1.0 зависит от left ^1.0.0 и right ^1.0.0.
+foo 1.0.0 не имеет зависимостей.
+left 1.0.0 зависит от shared >=1.0.0.
+right 1.0.0 зависит от shared <2.0.0.
+shared 2.0.0 не имеет зависимостей.
+shared 1.0.0 зависит от target ^1.0.0.
+target 2.0.0 и 1.0.0 не имеют зависимостей.
+```
+
+Решение:
+
+```
+include "globals.mzn";
+
+% 1. Định nghĩa các phiên bản của các gói
+enum Versions_root = {root_1_0_0};
+enum Versions_foo = {foo_1_0_0, foo_1_1_0};
+enum Versions_left = {left_1_0_0};
+enum Versions_right = {right_1_0_0};
+enum Versions_shared = {shared_1_0_0, shared_2_0_0};
+enum Versions_target = {target_1_0_0, target_2_0_0};
+
+% 2. Khai báo biến cho mỗi gói phần mềm
+var Versions_root: root_version;
+var Versions_foo: foo_version;
+var Versions_left: left_version;
+var Versions_right: right_version;
+var Versions_shared: shared_version;
+var Versions_target: target_version;
+
+% 3. Thiết lập các ràng buộc phụ thuộc
+% Ràng buộc giữa root và foo
+constraint
+  (root_version == root_1_0_0 -> foo_version in {foo_1_0_0, foo_1_1_0}) /\
+  (root_version == root_1_0_0 -> target_version == target_2_0_0);
+
+% Ràng buộc giữa foo và left, right
+constraint
+  (foo_version == foo_1_1_0 -> left_version == left_1_0_0) /\
+  (foo_version == foo_1_1_0 -> right_version == right_1_0_0);
+
+% Ràng buộc giữa left và shared
+constraint
+  (left_version == left_1_0_0 -> shared_version in {shared_1_0_0, shared_2_0_0});
+
+% Ràng buộc giữa right và shared
+constraint
+  (right_version == right_1_0_0 -> shared_version == shared_1_0_0);
+
+% Ràng buộc giữa shared và target
+constraint
+  (shared_version == shared_1_0_0 -> target_version in {target_1_0_0, target_2_0_0});
+
+% 4. Tối ưu hóa hoặc giải pháp
+solve satisfy;
+
+% 5. Hiển thị kết quả
+output ["root version: ", show(root_version), "\nfoo version: ", show(foo_version), 
+        "\nleft version: ", show(left_version), "\nright version: ", show(right_version),
+        "\nshared version: ", show(shared_version), "\ntarget version: ", show(target_version)];
+
+```
+![image](https://github.com/user-attachments/assets/c0f7319b-4c00-4897-9b1b-0b18a1e1a538)
+
+
