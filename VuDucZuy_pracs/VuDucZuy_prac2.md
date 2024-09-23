@@ -41,7 +41,7 @@ fim matplotlib.png
 ![Screenshot 2024-09-23 100351](https://github.com/user-attachments/assets/4ee3545b-5667-42cd-8cce-0481cd96e831)
 
 ## Задача 4
-
+Решить на MiniZinc задачу о счастливых билетах. Добавить ограничение на то, что все цифры билета должны быть различными. Найти минимальное решение для суммы 3 цифр.
 
 ```mzn
 include "globals.mzn";  % Thêm dòng này để sử dụng hàm all_different
@@ -63,3 +63,48 @@ output ["Các chữ số của vé số: \(digits)\n"];
 
 ```
 ![Screenshot 2024-09-23 170610](https://github.com/user-attachments/assets/8d637db8-d660-4bfa-845d-e7868be27161)
+
+## Задача 5
+Решить на MiniZinc задачу о зависимостях пакетов для рисунка, приведенного в постановке задачи.
+
+```mzn
+include "globals.mzn";
+
+% 1. Định nghĩa các phiên bản của các gói
+enum Versions_menu = {m1_0_0, m1_1_0, m1_2_0, m1_3_0, m1_4_0, m1_5_0};
+enum Versions_dropdown = {d1_8_0, d2_0_0, d2_1_0, d2_2_0, d2_3_0};
+enum Versions_icons = {i1_0_0, i2_0_0};
+enum Versions_root = {r1_0_0};
+
+% 2. Khai báo biến cho mỗi gói phần mềm
+var Versions_menu: menu_version;
+var Versions_dropdown: dropdown_version;
+var Versions_icons: icons_version;
+var Versions_root: root_version;
+
+% 3. Thiết lập các ràng buộc phụ thuộc
+% Ràng buộc giữa root và menu
+constraint
+  root_version == r1_0_0 -> menu_version == m1_5_0;
+
+% Ràng buộc giữa menu và dropdown
+constraint
+  (menu_version == m1_5_0 -> dropdown_version == d2_3_0) /\
+  (menu_version == m1_4_0 -> dropdown_version == d2_2_0) /\
+  (menu_version == m1_3_0 -> dropdown_version == d2_1_0) /\
+  (menu_version == m1_2_0 -> dropdown_version == d2_0_0) /\
+  (menu_version == m1_1_0 -> dropdown_version == d2_0_0) /\
+  (menu_version == m1_0_0 -> dropdown_version == d1_8_0);
+
+% Ràng buộc giữa dropdown và icons
+constraint
+  dropdown_version == d2_3_0 -> icons_version == i2_0_0;
+
+% 4. Tối ưu hóa hoặc giải pháp
+solve satisfy;
+
+% 5. Hiển thị kết quả
+output ["menu version: ", show(menu_version), "\ndropdown version: ", show(dropdown_version), "\nicons version: ", show(icons_version)];
+
+```
+![Screenshot 2024-09-23 181146](https://github.com/user-attachments/assets/0b0d9783-e244-4352-9daf-697a76898191)
