@@ -286,6 +286,8 @@ if __name__ == "__main__":
 ```
 
 ```dependencies.mzn
+% dependencies.mzn
+
 enum Versions_root = {root_1_0_0};
 var Versions_root: root_version;
 
