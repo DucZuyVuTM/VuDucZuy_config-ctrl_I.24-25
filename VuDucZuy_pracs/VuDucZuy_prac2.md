@@ -110,7 +110,6 @@ output ["menu version: ", show(menu_version), "\ndropdown version: ", show(dropd
 ![Screenshot 2024-09-23 181146](https://github.com/user-attachments/assets/0b0d9783-e244-4352-9daf-697a76898191)
 
 ## Задача 6
-
 Решить на MiniZinc задачу о зависимостях пакетов для следующих данных:
 
 ```
@@ -179,4 +178,141 @@ output ["root version: ", show(root_version), "\nfoo version: ", show(foo_versio
 ```
 ![image](https://github.com/user-attachments/assets/c0f7319b-4c00-4897-9b1b-0b18a1e1a538)
 
+## Задача 7
+Представить задачу о зависимостях пакетов в общей форме. Здесь необходимо действовать аналогично реальному менеджеру пакетов. То есть получить описание пакета, а также его зависимости в виде структуры данных. Например, в виде словаря. В предыдущих задачах зависимости были явно заданы в системе ограничений. Теперь же систему граничений надо построить автоматически, по метаданным.
 
+```metadata.py
+# metadata.py
+
+package_metadata = {
+    "root": {
+        "1.0.0": {
+            "dependencies": {"foo": "^1.0.0", "target": "^2.0.0"}
+        }
+    },
+    "foo": {
+        "1.1.0": {
+            "dependencies": {"left": "^1.0.0", "right": "^1.0.0"}
+        },
+        "1.0.0": {
+            "dependencies": {}
+        }
+    },
+    "left": {
+        "1.0.0": {
+            "dependencies": {"shared": ">=1.0.0"}
+        }
+    },
+    "right": {
+        "1.0.0": {
+            "dependencies": {"shared": "<2.0.0"}
+        }
+    },
+    "shared": {
+        "2.0.0": {
+            "dependencies": {}
+        },
+        "1.0.0": {
+            "dependencies": {"target": "^1.0.0"}
+        }
+    },
+    "target": {
+        "2.0.0": {
+            "dependencies": {}
+        },
+        "1.0.0": {
+            "dependencies": {}
+        }
+    }
+}
+
+```
+
+```generate_mzn.py
+# generate_mzn.py
+import metadata
+
+def generate_mzn_constraints(metadata):
+    constraints = []
+    package_vars = {}
+
+    # Tạo biến cho mỗi package
+    for package, versions in metadata.items():
+        package_var = f"{package}_version"
+        package_vars[package] = package_var
+        version_enum = ', '.join([f"{package}_{v.replace('.', '_')}" for v in versions])
+        constraints.append(f"enum Versions_{package} = {{{version_enum}}};")
+        constraints.append(f"var Versions_{package}: {package_var};")
+
+    # Tạo ràng buộc cho các dependencies
+    for package, versions in metadata.items():
+        package_var = package_vars[package]
+        for version, data in versions.items():
+            version_name = f"{package}_{version.replace('.', '_')}"
+            deps = data.get("dependencies", {})
+
+            for dep_pkg, dep_version in deps.items():
+                dep_var = package_vars[dep_pkg]
+
+                if dep_version.startswith('^'):
+                    min_version = dep_version[1:].replace('.', '_')
+                    constraint = f"constraint ({package_var} == {version_name} -> {dep_var} >= {dep_pkg}_{min_version});"
+                elif dep_version.startswith('>='):
+                    min_version = dep_version[2:].replace('.', '_')
+                    constraint = f"constraint ({package_var} == {version_name} -> {dep_var} >= {dep_pkg}_{min_version});"
+                elif dep_version.startswith('<'):
+                    max_version = dep_version[1:].replace('.', '_')
+                    constraint = f"constraint ({package_var} == {version_name} -> {dep_var} < {dep_pkg}_{max_version});"
+                else:
+                    exact_version = dep_version.replace('.', '_')
+                    constraint = f"constraint ({package_var} == {version_name} -> {dep_var} == {dep_pkg}_{exact_version});"
+
+                constraints.append(constraint)
+
+    return '\n'.join(constraints)
+
+def write_to_file(filename, content):
+    with open(filename, 'w') as file:
+        file.write(content)
+
+if __name__ == "__main__":
+    # Tạo hệ thống ràng buộc dựa trên metadata
+    mzn_constraints = generate_mzn_constraints(metadata.package_metadata)
+
+    # Ghi ra file .mzn
+    write_to_file("dependencies.mzn", mzn_constraints)
+    print("MiniZinc model generated and saved to dependencies.mzn")
+
+```
+
+```dependencies.mzn
+enum Versions_root = {root_1_0_0};
+var Versions_root: root_version;
+
+enum Versions_foo = {foo_1_0_0, foo_1_1_0};
+var Versions_foo: foo_version;
+
+enum Versions_left = {left_1_0_0};
+var Versions_left: left_version;
+
+enum Versions_right = {right_1_0_0};
+var Versions_right: right_version;
+
+enum Versions_shared = {shared_1_0_0, shared_2_0_0};
+var Versions_shared: shared_version;
+
+enum Versions_target = {target_1_0_0, target_2_0_0};
+var Versions_target: target_version;
+
+constraint (root_version == root_1_0_0 -> foo_version >= foo_1_0_0);
+constraint (root_version == root_1_0_0 -> target_version >= target_2_0_0);
+constraint (foo_version == foo_1_1_0 -> left_version >= left_1_0_0);
+constraint (foo_version == foo_1_1_0 -> right_version >= right_1_0_0);
+constraint (left_version == left_1_0_0 -> shared_version >= shared_1_0_0);
+constraint (right_version == right_1_0_0 -> shared_version < shared_2_0_0);
+constraint (shared_version == shared_1_0_0 -> target_version >= target_1_0_0);
+
+solve satisfy;
+
+```
+![image](https://github.com/user-attachments/assets/9c9bd48d-6f7f-4926-9b55-ed9c39f7e3c1)
