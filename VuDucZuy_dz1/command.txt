@@ -1,0 +1,4 @@
+pwd
+cd test_fs/dir1
+cat file1.txt 
+cat file2.txt 
