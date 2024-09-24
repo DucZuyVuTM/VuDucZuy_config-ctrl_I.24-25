@@ -40,16 +40,15 @@ class VShell:
             else:
                 print(f"No such directory: {path}")
 
-    def cat(self, file_names):
+    def cat(self, file_name):
         """Lệnh cat hiển thị nội dung của file"""
-        for file_name in file_names:
-            full_path = os.path.normpath(os.path.join(self.current_path.lstrip('/'), file_name))
-            if full_path in self.file_list:
-                with self.zip.open(full_path) as f:
-                    content = f.read().decode('utf-8')
-                    print(content)
-            else:
-                print(f"File {file_name} not found.")
+        full_path = os.path.normpath(os.path.join(self.current_path.lstrip('/'), file_name))
+        if full_path in self.file_list:
+            with self.zip.open(full_path) as f:
+                content = f.read().decode('utf-8')
+                print(content)
+        else:
+            print(f"File {file_name} not found.")
 
     def history(self):
         """Lệnh history hiển thị lịch sử lệnh"""
@@ -57,13 +56,27 @@ class VShell:
             print(f"{index + 1}: {command}")
 
     def find(self, search_name):
-        """Lệnh find tìm kiếm file hoặc thư mục"""
-        matches = [f for f in self.file_list if search_name in os.path.basename(f)]
-        if matches:
-            for match in matches:
-                print(f"Found: {match}")
+        """Lệnh find tìm kiếm file hoặc thư mục theo đúng tên trong thư mục hiện tại"""
+        files_in_dir = [f for f in self.file_list if f.startswith(self.current_path[1:]) and f != self.current_path]
+        subdirs = []
+        for f in files_in_dir:
+            relative_path = f[len(self.current_path[1:]):].strip('/')
+            subdir = relative_path.split('/')[0]
+            subdirs.append(subdir)
+        
+        if search_name in subdirs:
+            print (search_name)
+            prevdir = self.current_path[1:]
+            if prevdir:
+                subdir = prevdir + "/" + search_name + "/"
+            else:
+                subdir = search_name + "/"
+            files_in_subdir = [f for f in self.file_list if f.startswith(subdir) and f != subdir]
+            for f in files_in_subdir:
+                relative_path = f[len(prevdir):]
+                print (relative_path.strip("/"))
         else:
-            print(f"No matches found for {search_name}.")
+            print(f"find: ‘{search_name}’: No such file or directory")
 
     def rev(self, file_name):
         """Lệnh rev đảo ngược nội dung của file"""
@@ -116,20 +129,15 @@ class VShell:
         elif cmd == 'cat':
             if args:
                 for arg in args:
-                    # Tách các thành phần của đường dẫn
-                    path_list = arg.strip('/').split('/')
-                    if len(path_list) == 1:
-                        # Nếu chỉ có tên file mà không có thư mục, gọi trực tiếp cat
-                        self.cat([arg])
-                    else:
-                        # Nếu có đường dẫn, chuyển đến thư mục chứa file
+                    if arg[0] == "/":
                         CurrentPath = self.current_path
-                        pathToGo = "/".join(path_list[:-1])
-                        self.cd(pathToGo)
-                        self.cat([path_list[-1]])  # Lấy file cuối cùng trong đường dẫn
+                        self.cd("/")
+                        self.cat(arg[1:])
                         self.cd(CurrentPath)
+                    else:
+                        self.cat(arg)
             else:
-                print("cat: missing argument")
+                print("rev: missing argument")
         elif cmd == 'history':
             self.history()
         elif cmd == 'find':
@@ -139,7 +147,14 @@ class VShell:
                 print("find: missing argument")
         elif cmd == 'rev':
             if args:
-                self.rev(args[0])
+                for arg in args:
+                    if arg[0] == "/":
+                        CurrentPath = self.current_path
+                        self.cd("/")
+                        self.rev(arg[1:])
+                        self.cd(CurrentPath)
+                    else:
+                        self.rev(arg)
             else:
                 print("rev: missing argument")
         else:
@@ -149,6 +164,55 @@ class VShell:
         """Đóng file zip"""
         self.zip.close()
 
+def test_commands(vshell):
+    """
+    Test all implemented commands.
+    """
+    print("Testing commands...")
+    print("======================================")
+
+    # Test ls
+    print("Testing ls command:")
+    vshell.execute_command("ls")
+    vshell.execute_command("ls /test_fs/dir1")
+    print("======================================")
+
+    # Test cd
+    print("Testing cd command:")
+    vshell.execute_command("cd /test_fs/dir1")
+    vshell.execute_command("pwd")
+    vshell.execute_command("cd /")
+    print("======================================")
+
+    # Test pwd
+    print("Testing pwd command:")
+    vshell.execute_command("cd /test_fs")
+    vshell.execute_command("pwd")
+    vshell.execute_command("cd /")
+    print("======================================")
+        
+    # Test cat
+    print("Testing cat command:")
+    vshell.execute_command("cat Main.java")
+    vshell.execute_command("cat test_fs/dir1/file1.txt")
+    vshell.execute_command("cat test_fs/dir1/file1.txt /test_fs/dir1/file2.txt")
+    vshell.execute_command("cd /test_fs/dir1")
+    vshell.execute_command("cat /Main.java")
+    vshell.execute_command("cat file1.txt file2.txt")
+    vshell.execute_command("cd /")
+    print("======================================")
+
+    # Test cat
+    print("Testing rev command:")
+    vshell.execute_command("rev Main.java")
+    vshell.execute_command("rev test_fs/dir1/file1.txt")
+    vshell.execute_command("rev test_fs/dir1/file1.txt /test_fs/dir1/file2.txt")
+    vshell.execute_command("cd /test_fs/dir1")
+    vshell.execute_command("rev /Main.java")
+    vshell.execute_command("rev file1.txt file2.txt")
+    vshell.execute_command("cd /")
+    print("======================================")
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: vshell.py <zip_file> [--script script_file]")
@@ -156,6 +220,8 @@ if __name__ == "__main__":
 
     zip_file = sys.argv[1]
     vshell = VShell(zip_file)
+
+    # test_commands(vshell)
 
     # Nếu có tùy chọn --script, chạy các lệnh từ script
     if len(sys.argv) == 4 and sys.argv[2] == '--script':
