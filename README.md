@@ -14,6 +14,8 @@ Topics for the assignments are in [this link](https://github.com/true-grue/kissc
 
 [Practical assignment №4](./VuDucZuy_pracs/VuDucZuy_prac4.md)
 
+[Practical assignment №6](./VuDucZuy_pracs/VuDucZuy_prac6.md)
+
 ## Home assignments
 
 [Home assignment №1](./VuDucZuy_dz1)
