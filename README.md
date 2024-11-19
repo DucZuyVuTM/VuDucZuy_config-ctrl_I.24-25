@@ -2,7 +2,7 @@
 
 ## Where are the topics?
 
-Topics for the assignments are in [this link](https://github.com/true-grue/kisscm/tree/main/pract).
+Assignment topics are in [this link](https://github.com/true-grue/kisscm/tree/main/pract).
 
 ## Practical assignments
 
